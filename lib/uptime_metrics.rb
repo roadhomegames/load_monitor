@@ -151,8 +151,6 @@ class UptimeMetrics
   end
 
   def start_worker
-    Rails.logger.info("Starting worker #{caller.inspect}")
-
     @worker_thread = Thread.new do
       worker = UptimeWorker.new
       worker.perform_task
