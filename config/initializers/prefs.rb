@@ -13,3 +13,4 @@ end
 # Global variables
 $PROD_APP_PARAMS = AppInitializeParams.new(10, 60) # Update every 10 seconds, retain 60 updates for a total of 10 minutes
 $TEST_APP_PARAMS = AppInitializeParams.new(2.5, 60) # When running in test mode, update more frequently so we don't have to sit there as long
+$ALERT_THRESHOLD = 1

@@ -26,6 +26,8 @@ LoadMonitor::Application.configure do
   config.assets.js_compressor = :uglifier
   # config.assets.css_compressor = :sass
 
+  # Set compile to true to prevent javascript 404 as per recommended here: 
+  # http://stackoverflow.com/questions/9888724/failed-to-load-resource-the-server-responded-with-a-status-of-404-not-found
   config.assets.compile = true
 
   # Generate digests for assets URLs.

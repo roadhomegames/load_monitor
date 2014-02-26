@@ -1,23 +1,14 @@
+require 'uptime_metrics.rb'
+
 class JsonController < ApplicationController
 
-  # Helper class
-  class UptimeCapture
-    attr_accessor :uptime
-    attr_accessor :users
-    attr_accessor :avg_one, :avg_five, :avg_fifteen;
-    attr_accessor :create_time # Creation time in UTC
-
-    def initialize(ut, use_count, a1, a5, a15)
-      @uptime = ut
-      @users = use_count
-      @avg_one = a1
-      @avg_five = a5
-      @avg_fifteen = a15
-      @create_time = Time.now.utc
-    end
-  end
+  # Global metrics singleton
+  $metrics = UptimeMetrics.new($PROD_APP_PARAMS.update_interval, $PROD_APP_PARAMS.updates_to_retain)
 
   def app_params
+    $metrics.ensure_worker_running
+    logger.info($metrics.num_metrics)
+
     # Return app initialization params.
     test = params[:test];
 
@@ -30,6 +21,8 @@ class JsonController < ApplicationController
   end
 
   def stats
+    $metrics.ensure_worker_running
+
     ut = %x{"uptime"} # Capture stdout from running "uptime" on the command line
 
     # Parse the uptime results
@@ -43,16 +36,19 @@ class JsonController < ApplicationController
       up_str = match[1].sub(/days,\s+/, "days, ")
 
       # Render the results to JSON using an object
-      jsonUt = UptimeCapture.new(up_str, match[2], match[3], match[4], match[5])
+      jsonUt = UptimeCapture.new(up_str, match[2], match[3])
       render json: jsonUt
     end
   end
 
   def data_since
+    $metrics.ensure_worker_running
     render nothing: true
   end
 
   def alert_status
+    $metrics.ensure_worker_running
+
     render nothing: true
   end
 
