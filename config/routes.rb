@@ -1,4 +1,12 @@
 LoadMonitor::Application.routes.draw do
+  
+  get "monitor/viz"
+
+  get "json/stats"
+  get "json/data_since"
+  get "json/alert_status"
+  get "json/app_params"
+
   # The priority is based upon order of creation: first created -> highest priority.
   # See how all your routes lay out with "rake routes".
 
