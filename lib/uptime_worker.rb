@@ -4,6 +4,7 @@ class UptimeWorker
   @@index = 0
 
   def initialize()
+    @mine = @@index
     @@index += 1
   end
 
@@ -25,7 +26,7 @@ class UptimeWorker
         # Render the results to JSON using an object
         json_ut = UptimeCapture.new(up_str, match[2], match[3])
         $metrics.add_with_stats(json_ut, match[4], match[5])
-        Rails.logger.info("#{$metrics.num_metrics} instance = #{@@index}")
+        Rails.logger.info("#{$metrics.num_metrics} instance = #{@mine}")
       end      
 
       sleep($metrics.metric_count)
