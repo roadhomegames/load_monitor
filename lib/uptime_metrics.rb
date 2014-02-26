@@ -39,7 +39,6 @@ class UptimeMetrics
   def add_with_stats(metric, five_min, fifteen_min)
     @worker_mutex.synchronize do
       internal_add(metric)
-      Rails.logger.info("Added " + metric.to_s)
       internal_update_stats(metric, internal_two_min_avg(), five_min, fifteen_min)
       Rails.logger.info("Stats done")
     end
@@ -59,10 +58,8 @@ class UptimeMetrics
 
   # Update statistics and alert status
   def internal_update_stats(metric, two_min, five_min, fifteen_min)
-    Rails.logger.info("beginning internal_update_stats")
     alert_status = cur_alert
 
-    Rails.logger.info("blah 1")
     if (alert?) # Alert case
       Rails.logger.info("alert case")
       if (two_min < $ALERT_THRESHOLD)
@@ -79,7 +76,6 @@ class UptimeMetrics
       end
     end
 
-    Rails.logger.info("blah 3")
     Rails.logger.info(metric.avg_one)
     @stats.setup(metric, two_min, five_min, fifteen_min, alert_status)
   end

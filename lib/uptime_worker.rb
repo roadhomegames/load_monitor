@@ -1,7 +1,10 @@
 require 'uptime_alert_status.rb'
 
 class UptimeWorker
+  @@index = 0
+
   def initialize()
+    @@index += 1
   end
 
   def perform_task
@@ -22,6 +25,7 @@ class UptimeWorker
         # Render the results to JSON using an object
         json_ut = UptimeCapture.new(up_str, match[2], match[3])
         $metrics.add_with_stats(json_ut, match[4], match[5])
+        Rails.logger.info("#{$metrics.num_metrics} instance = #{@@index}")
       end      
 
       sleep($metrics.metric_count)
