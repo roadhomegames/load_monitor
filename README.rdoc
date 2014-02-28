@@ -1,7 +1,82 @@
 == README
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+I completed the task using Ruby-on-Rails, Twitter's bootcamp libraries, and D3 for visualization.
+The easiest way to test the app is by visiting the deployed instance on Heroku
+http://warm-tundra-1977.herokuapp.com/monitor/viz shows actual uptime data.
+http://warm-tundra-1977.herokuapp.com/monitor/viz_test shows test data to validate alert logic.
+The test version samples 4 times as quickly to speed up testing.
+
+Unfortunately, because I didn't pay Heroku, they idle applications that haven't had any traffic for ~1 hour.
+Usually, this means your requests to the pages will time out. It usually takes about 1 minute for the app
+to spin back up.
+
+There are buttons to toggle between plotting the 1-minute and 2-minute average loads, sampled every 10 seconds.
+1-minute average load is gathered directly from the 'uptime' command. 2-minute average load is calculated by
+maintaining an exponential moving average of 1-minute load samples gathered every 10 seconds. An exponential
+moving average is used because this article: http://en.wikipedia.org/wiki/Load_(computing)#Unix-style_load_calculation
+says that uptime calculate an exponentially weighted moving average. I don't know what weights they use, so I can't
+completely mimic their calculation, but I use an EMA to be as consistent with them as I can.
+
+Alerts are generated when 2-minute average load crosses the load=1 threhsold and are dismissed when it drops
+back below. You can verify this behavior by clicking the 2-minute average button in the test deployment and
+verifying that when the plot crosses the alert threshold, an alert is generated (I know, there should be some
+automated tests too, but I ran out of time and had to get this in to you so you could see it and make a decision).
+Alerts are retained for as long as you remain on the page, and are dismissed when you leave.
+
+I had ideas for a bunch more interactivity and animations, but unfortunately the vast majority of my time was spent on
+learning rails, ruby, css, jQuery, heroku, web app development etc. (this is my first ever web app!) and 
+I just ended up running out of time.
+
+KNOWN BUGS:
+* If an alert is ongoing when you visit the page, the red-circle on the graph that corresponds to the alert is 
+  plotted in a sort of funny location that doesn't really correspond to the load at that moment.
+* The alert circles on the graph don't visually match the 1 minute load graph (this is because they show the
+  two minute load at the time the alert/clear was issued, but it's still a bad user experience)
+
+CODE STRUCTURE:
+I really apologize for the messiness of my submission, it is in desperate need of a refactor and some proper
+unit tests, but I really had no clue what I was doing while I was teaching myself how to make it work. I tried
+to remove most of the dead code, but there's probably still some left.
+
+For the most part, the server logic lives in the .rb files in the /lib directory. I use a background thread to gather 
+uptime samples. The basic HTML for the viz and viz_test sites lives in app/assets/views/monitor/*.html.erb.
+The client code is mostly in public/javascripts/dynamic_viz.js
+
+DEPLOYMENT INSTRUCTIONS:
+These instructions are pretty vague because I'm hoping you won't have to go through the trouble of deploying it.
+It can be a real pain if you're unfamiliar with rails and/or ruby. I use ruby-2.0.0-p353 in this project. If you
+have another version of Ruby installed, you can use rvm to switch between Ruby versions. I found chapter 1 of this
+tutorial helpful in getting started: http://ruby.railstutorial.org/chapters/beginning?version=4.0#sec-introduction
+If you have the correct version of everything installed, I think you should just be able to run 'bundle update'
+inside the base directory where you downloaded the code, and then 'bundle install', and then 'rails server' to launch
+the server. If the server successfully launches, you can visit localhost:3000/monitor/viz or localhost:3000/monitor/viz_test
+to test your local version.
+
+JSON API:
+"app_params" PARAMETERS [<test: boolean>]
+RETURNS 
+  update_interval: int (time in seconds to wait between updates)
+  updates_to_retain: int (number of updates to display in the graph)
+
+"data_since" PARAMETERS [time: <Unix timestamp>], [<test: boolean>]
+RETURNS an array of load samples that were gathered >= input timestamp.
+  one: the 1-min load average for the sample
+  two: the 2-min load average for the sample
+  time: a UNIX timestamp indicating when the sample was gathered
+
+"stats" [<test: boolean>]
+RETURNS
+  uptime: string indicating duration of machine uptime
+  users: integer number of users logged in
+  one: 1 min load average
+  two: 2 min load average
+  five: 5 min load average
+  fifteen: 15 min load average
+  time: UNIX timestamp indicating when the stats were gathered.
+  alert: "Alert"/"Clear" indicating current alert status.
+  alert_time: timestamp indicating when the alert was issued.
+
+You can test these using curl or something like that if you want (ie curl -X GET -H "Content-Type: application/json" -d '{"test":"true", "time":1393561570}' http://localhost:3000/json/data_since)
 
 TASK:
 Load monitoring web application
