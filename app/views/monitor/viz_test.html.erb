@@ -18,9 +18,13 @@
     </div>
   </div>
 
-  <div class="panel panel-default">
-    <%= javascript_include_tag "/javascripts/dynamic_viz.js" %>
+  <div class="btn-group" data-toggle="buttons-radio">
+    <button type="button" id = "select-one" class="btn btn-primary active">One minute average</button>
+    <button type="button" id = "select-two" class="btn btn-primary">Two minute average</button>
   </div>
+
+  <div id = "graph"></div>
+  <%= javascript_include_tag "/javascripts/dynamic_viz.js" %>
 
   <!-- Alert messages will go here -->
   <div id = "alert_placeholder"></div>

@@ -91,6 +91,10 @@ textarea {
   background-color: #999;
 }
 
+[data-toggle=buttons]>.btn>input[type=radio] {
+  display: none;
+}
+
 .axis path,
 .axis line {
   fill: none;
@@ -104,6 +108,5 @@ textarea {
 
 .line {
   fill: none;
-  stroke: steelblue;
   stroke-width: 1.5px;
 }

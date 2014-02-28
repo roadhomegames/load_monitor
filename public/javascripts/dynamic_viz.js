@@ -28,6 +28,9 @@ var alertStatus = {
   }
 };
 
+var JSONData = [];
+var alertGraphData = [];
+
 // On page startup, grab initialization params
 $.getJSON( url + "json/app_params", { test: test }, function( data ) {
   updateInterval = data["update_interval"];
@@ -35,7 +38,7 @@ $.getJSON( url + "json/app_params", { test: test }, function( data ) {
 });
 
 var margin = {top: 20, right: 20, bottom: 30, left: 50},
-    width = 960 - margin.left - margin.right,
+    width = 940 - margin.left - margin.right,
     height = 500 - margin.top - margin.bottom;
 
 var parseDate = d3.time.format("%d-%b-%y").parse;
@@ -55,20 +58,53 @@ var yAxis = d3.svg.axis()
     .orient("left");
 
 var lineOne = d3.svg.line()
-    .x(function(d) { return x(d.date); })
-    .y(function(d) { return y(d.close); });
+    .x(function(d) { return x(d.time); })
+    .y(function(d) { return y(d.one); });
 
 var lineTwo = d3.svg.line()
-    .x(function(d) { return x(d.date); })
-    .y(function(d) { return y(d.close); });
+    .x(function(d) { return x(d.time); })
+    .y(function(d) { return y(d.two); });
 
-var svg = d3.select("body").append("svg")
+var svg = d3.select("#graph").append("svg")
     .attr("width", width + margin.left + margin.right)
     .attr("height", height + margin.top + margin.bottom)
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
+var inputSelection = "one";
+function selectInput(selection) {
+  inputSelection = selection;
+  updateGraph();
+}
+function oneSelected() {
+  return inputSelection == "one";
+}
+
+function getLine()
+{
+  return (oneSelected() ? lineOne : lineTwo);
+}
+
 (function() {
+
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+
+  svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis)
+    .append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", ".71em")
+      .style("text-anchor", "end")
+      .text("average load");
+
+  $('.btn-group').button();
+  $('#select-one').on("click", function() { selectInput("one"); });
+  $('#select-two').on("click", function() { selectInput("two"); });
 
   gatherUpdate();
 
@@ -82,53 +118,145 @@ function getTime(timestamp)
   return new Date(timestamp * 1000)
 }
 
-// Why does Javascript not have a decent Date.format() function?
-// Profiling in my browser, toLocaleFormat was killing my CPU, so I rolled my own.
-// There must be a better way to do this.
 function timeString(timestamp)
 {
   return getTime(timestamp).toLocaleString();
-
-  // var t = getTime(timestamp);
-  // var d = (t.getMonth() + 1) + '/' + t.getDate() + '/' +  t.getFullYear();
-  // var h = t.getHours() % 12;
-  // if (h == 0) h == 12;
-  // var ampm = t.getHours() > 12 ? "PM" : "AM";
-  // var mins = t.getMinutes();
-  // mins = (mins < 10 ? "0" + mins : mins.toString());
-  // var secs = t.getSeconds();
-  // secs = (secs < 10 ? "0" + secs : secs.toString());
-
-  // var time = (h + ":" + mins + ":" + secs + " " + ampm);
-  // return time + ", " + d;
 }
 
 function handleDataSince(data)
 {
-  for (var d in data)
-  {
-    // console.log(d + ": " + data[d]["avg_one"] + " " + getTime(data[d]["time"]));
-  }
-
+  // Grab the timestamp for the last update that was sent to us so when issuing
+  // the next update request, we know what time to use
   if (data.length > 0)
   {
-    // Grab the timestamp for the last update that was sent to us.
-    lastUpdateTime = data[data.length - 1]["time"];
+    lastUpdateTimestamp = data[data.length - 1]["time"];
   }
 
-  // var items = [];
-  // $.each( data, function( key, val ) {
-  //   items.push( "<li id='" + key + "'>" + val + "</li>" );
-  // });
+  for (var i = 0; i < data.length; i++)
+  {
+    var d = data[i];
+    JSONData.push( { one: d.one, two: d.two, time: getTime(d.time) } );
+  }
 
-  // $( "<ul/>", {
-  //   "class": "my-new-list",
-  //   html: items.join( "" )
-  // }).appendTo( "body" );
+  // Update our data
+  while (JSONData.length > updateCount)
+  {
+    JSONData.shift();
+  }
 
+  // Clear out old alerts
+  if (JSONData.length > 0)
+  {
+    while (alertGraphData.length > 0)
+    {
+      if (alertGraphData[0].time >= JSONData[0].time) break;
+      else alertGraphData.shift(); // (we don't need an alert on the graph if it's older than the last update)
+    }
+  }
+
+  updateGraph();
+  
   // Schedule next update
-  console.log("Scheduling next update")
+  // console.log("Scheduling next update")
+  // console.log(document.getElementsByTagName("*").length);
   setTimeout(gatherUpdate, updateInterval * 1000);
+}
+
+function updateGraph()
+{
+  x.domain(d3.extent(JSONData, function(d) { return d.time; }));
+
+  var yDomain;
+  if (oneSelected())
+  {
+    yDomain = d3.extent(JSONData, function(d) { return d.one; });
+    
+  }
+  else
+  {
+    yDomain = d3.extent(JSONData, function(d) { return d.two; }); 
+  }
+
+  // Ensure the high load threshold is in view of our domain
+  yDomain[0] = Math.min(0.9, yDomain[0]);
+  yDomain[1] = Math.max(1.1, yDomain[1]);
+  y.domain(yDomain);
+
+  svg.selectAll("g.y.axis")
+        .call(yAxis);
+
+  svg.selectAll("g.x.axis")
+        .call(xAxis);
+
+  var lines = svg.selectAll("path.line")
+      .data([ JSONData ], function(x) { return x.time; } );
+
+  // This is kind of weird, but lines.attr("class", "update");
+  // was breaking, so stuck with this for now, no time to figure it out.
+  lines.transition().duration(10).attr('d', getLine());
+   
+  lines.enter().append("path")
+      .attr("class", "line")
+      .attr("d", getLine())
+      .attr("stroke", "blue");
+
+  lines
+      .exit()
+      .remove();
+
+  if (JSONData.length > 0)
+  {
+    var first = JSONData[0];
+    var last = JSONData[JSONData.length-1];
+    var thresholdData = [ {one: 1.0, two: 1.0, time: first.time}, {one: 1.0, two: 1.0, time: last.time} ];
+    var threshold = svg.selectAll("threshold")
+      .data([ thresholdData ], function(x) { return x.time; });
+
+    threshold.transition().duration(10).attr('d', getLine());
+
+    threshold.enter().append("path")
+        .attr("class", "line")
+        .attr("d", getLine())
+        .attr("stroke", "red");
+
+    threshold.exit().remove();
+  }
+
+  var textData = "High Load = 1.0";
+  var highLoad = svg.selectAll("#high_load").data([textData]);
+  var textOffset = 5;
+
+  highLoad.transition().duration(10)
+      .attr("x", function(d) { return 10; })
+      .attr("y", function(d) { return y(1.0) - textOffset;})
+
+  highLoad.enter().append("text")
+      .attr("class", "enter")
+      .attr("id", "high_load")
+      .attr("x", function(d) { return 10; })
+      .attr("y", function(d) { return y(1.0) - textOffset;})
+      .text(textData);
+
+  // Plot alert positions
+  var circles = svg.selectAll("circle").data(alertGraphData, function(d) { return d.time; });
+
+  circles.transition().duration(10)
+     .attr("cx", function(d) { return x(d.time); })
+     .attr("cy", function(d) { return y(d.load); })
+
+  circles.enter()
+     .append("svg:circle")
+     .attr("r", 0)
+     .attr("cx", function(d) { return x(d.time); })
+     .attr("cy", function(d) { return y(d.load); })
+     .attr("fill", "transparent")
+     .attr("stroke", function(d) { return d.alert ? "red" : "green"})
+     .attr("stroke-width", "5px")
+     .transition().duration(1000).
+     attr("r", 5);
+
+  circles.exit()
+   .remove();
 }
 
 function setAlertStatus(alert, loadVal, alert_time, cur_time)
@@ -145,6 +273,7 @@ function setAlertStatus(alert, loadVal, alert_time, cur_time)
       $('#clear_placeholder').prepend('<div class="alert alert-success">' + alertStatus.getClearMsg(cur_time) + '</div>');
 
       // Plot the clear time on the graph
+      alertGraphData.push( { load: loadVal, time: getTime(cur_time), alert: false });
 
       alertStatus.setStatus(false, cur_time, loadVal);
     }
@@ -158,6 +287,7 @@ function setAlertStatus(alert, loadVal, alert_time, cur_time)
       alertStatus.getAlertMsg() + '</div>')
 
     // Plot the alert time on the graph
+    alertGraphData.push( { load: loadVal, time: getTime(alert_time), alert: true });
   }
 }
 
@@ -187,7 +317,7 @@ function handleStats(data)
   }
 
   var alertStr = (alertStatus.inAlert() ? "red><strong>Alert</strong>" : "green>Clear");
-  var timeStr = (alertStatus.inAlert() ? timeString(alert_time) : "<No alert>");
+  var timeStr = (alertStatus.inAlert() ? timeString(alert_time) : "No alert");
 
   alertC.html(
       "<strong>Alert</strong> <font color=" + alertStr + "</font></br>" +
@@ -208,13 +338,13 @@ function buildColumn(i1, i2, i3)
 }
 
 function gatherUpdate()
-{
+{ 
+  $.getJSON( url + "json/stats", { test: test }, handleStats );
+
   $.getJSON( url + "json/data_since", 
     // Add +1 to lastupdatetime because the JSON API returns results for times >= to the time parameter,
     // and we want to avoid retrieving repeated results that we don't need
     { time: (lastUpdateTimestamp+1), test: test }, 
     handleDataSince 
   );
- 
-  $.getJSON( url + "json/stats", { test: test }, handleStats );
 }

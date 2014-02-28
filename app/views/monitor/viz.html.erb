@@ -1,16 +1,5 @@
 <body>
 
-  <div class="alert alert-danger">  
-    <a class="close" data-dismiss="alert">×</a>  
-    <strong>Warning!</strong> Best check yo self, you're not looking too good.  
-  </div> 
-  <div class="alert alert-success">
-    <strong>Well done!</strong> You successfully read this important alert message.
-  </div>
-  <div class="alert alert-info">
-    <strong>Heads up!</strong> This alert needs your attention, but it's not super important.
-  </div> 
-
   <div class="row show-grid">
     <div class="span4" id="alert-col">
       <strong>Alert</strong> <font color="green">Clear</font></br>
@@ -29,11 +18,13 @@
     </div>
   </div>
 
-  <div class="panel panel-default">
-    <%= javascript_include_tag "/javascripts/dynamic_viz.js" %>
+  <div class="btn-group" data-toggle="buttons-radio">
+    <button type="button" id = "select-one" class="btn btn-primary active">One minute average</button>
+    <button type="button" id = "select-two" class="btn btn-primary">Two minute average</button>
   </div>
-  <a href="javascript:void(0)" class="add-data action-button">Add data</a>
-  <a href="javascript:void(0)" class="remove-data action-button destroy">Delete data</a>
+
+  <div id = "graph"></div>
+  <%= javascript_include_tag "/javascripts/dynamic_viz.js" %>
 
   <!-- Alert messages will go here -->
   <div id = "alert_placeholder"></div>
