@@ -1,18 +1,19 @@
 # Helper class
 class UptimeCapture
-  attr_accessor :uptime
-  attr_accessor :users
-  attr_accessor :avg_one
+  attr_accessor :avg_one, :avg_two
   attr_accessor :create_time # Creation time in UTC
 
-  def initialize(ut, use_count, a1)
-    @uptime = ut
-    @users = use_count
-    @avg_one = a1
+  def initialize(a1)
+    @avg_one = a1.to_f
     @create_time = Time.now.utc
   end
 
+  # Return the create_time as a timestamp
+  def timestamp
+    return @create_time.to_i
+  end
+
   def to_s
-    return "Up for #{@uptime}, #{@users} users, #{avg_one} load, #{create_time}"
+    return "#{avg_one} load, #{avg_two}, #{create_time}"
   end
 end

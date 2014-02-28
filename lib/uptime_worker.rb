@@ -1,12 +1,15 @@
 require 'uptime_alert_status.rb'
 
 class UptimeWorker
-  def initialize()
+  attr_accessor :parent
+
+  def initialize(parent)
+    @parent = parent
   end
 
   def perform_task
 
-    while (true)
+    loop do
       ut = %x{"uptime"} # Capture stdout from running "uptime" on the command line
 
       # Parse the uptime results
@@ -14,17 +17,20 @@ class UptimeWorker
       format = /up\s+(.*?),\s+([0-9]+) users?,\s+load averages?: ([0-9]+\.[0-9][0-9]),?\s+([0-9]+\.[0-9][0-9]),?\s+([0-9]+\.[0-9][0-9])/
       match = format.match(ut)
       if (match.nil?)
-        render nothing: true
+        Rails.logger.info("Failed to match uptime results #{ut}")
       else
         # Strip out the extra spacing after "days,"
         up_str = match[1].sub(/days,\s+/, "days, ")
 
-        # Render the results to JSON using an object
-        json_ut = UptimeCapture.new(up_str, match[2], match[3])
-        $metrics.add_with_stats(json_ut, match[4], match[5])
+        cap = UptimeCapture.new(match[3])
+        parent.add_with_stats(cap, up_str, match[2], match[4], match[5])
       end      
 
-      sleep($metrics.metric_count)
+      if (parent.use_threads)
+        sleep(parent.update_interval_secs)
+      else
+        break
+      end
     end
   end
 end

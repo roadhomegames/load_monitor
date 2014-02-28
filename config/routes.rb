@@ -1,6 +1,7 @@
 LoadMonitor::Application.routes.draw do
-  
+
   get "monitor/viz"
+  get "monitor/viz_test"
 
   get "json/stats"
   get "json/data_since"

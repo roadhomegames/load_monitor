@@ -1,11 +1,3 @@
-var JSONData = [
-  { "id": 3, "created_at": "Sun May 05 2013", "amount": 12000},
-  { "id": 1, "created_at": "Mon May 13 2013", "amount": 2000},
-  { "id": 2, "created_at": "Thu Jun 06 2013", "amount": 17000},
-  { "id": 4, "created_at": "Thu May 09 2013", "amount": 15000},
-  { "id": 5, "created_at": "Mon Jul 01 2013", "amount": 16000}
-];
-
 // Grab the URL we'll be making our JSON calls to.
 var url = document.URL;
 var test = (url.indexOf("test") >= 0) ? "true" : "false";
@@ -42,78 +34,47 @@ $.getJSON( url + "json/app_params", { test: test }, function( data ) {
   updateCount = data["updates_to_retain"];
 });
 
+var margin = {top: 20, right: 20, bottom: 30, left: 50},
+    width = 960 - margin.left - margin.right,
+    height = 500 - margin.top - margin.bottom;
+
+var parseDate = d3.time.format("%d-%b-%y").parse;
+
+var x = d3.time.scale()
+    .range([0, width]);
+
+var y = d3.scale.linear()
+    .range([height, 0]);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+var lineOne = d3.svg.line()
+    .x(function(d) { return x(d.date); })
+    .y(function(d) { return y(d.close); });
+
+var lineTwo = d3.svg.line()
+    .x(function(d) { return x(d.date); })
+    .y(function(d) { return y(d.close); });
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.left + margin.right)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
 (function() {
 
-  var data = JSONData.slice()
-  var format = d3.time.format("%a %b %d %Y")
-  var amountFn = function(d) { return d.amount }
-  var dateFn = function(d) { return format.parse(d.created_at) }
-
-  var x = d3.time.scale()
-    .range([10, 280])
-    .domain(d3.extent(data, dateFn))
-
-  var y = d3.scale.linear()
-    .range([180, 10])
-    .domain(d3.extent(data, amountFn))
-  
-  var svg = d3.select(".panel").append("svg:svg")
-  .attr("width", 300)
-  .attr("height", 200)
-
-  var refreshGraph = function() {
-    x.domain(d3.extent(data, dateFn))
-    y.domain(d3.extent(data, amountFn))
-
-    var circles = svg.selectAll("circle").data(data, dateFn)
-    
-    circles.transition()
-     .attr("cx", function(d) { return x(dateFn(d)) })
-     .attr("cy", function(d) { return y(amountFn(d)) })
-
-    // circles
-    //  .attr("cx", function(d) { return x(dateFn(d)) })
-    //  .attr("cy", function(d) { return y(amountFn(d)) })
-
-
-     circles.enter()
-      .append("svg:circle")
-      .attr("r", 4)
-      .attr("cx", function(d) { return x(dateFn(d)) })
-      .attr("cy", function(d) { return y(amountFn(d)) })
-
-      circles
-        .exit()
-        .remove();
-  }
-
-  d3.selectAll(".add-data")
-   .on("click", function() {
-     var start = d3.min(data, dateFn)
-     var end = d3.max(data, dateFn)
-     var time = start.getTime() + Math.random() * (end.getTime() - start.getTime())
-     var date = new Date(time)
-
-     obj = {
-       'id': Math.floor(Math.random() * 70),
-       'amount': Math.floor(1000 + Math.random() * 30001),
-       'created_at': date.toDateString()
-     }
-     data.push(obj)
-     refreshGraph()
-  })
-
-  d3.selectAll(".remove-data")
-   .on("click", function() {
-    var toRemove = Math.floor(Math.random() * (data.length - 1))
-    data.splice(toRemove, 1)
-    refreshGraph()
-  })
-
-  refreshGraph()
   gatherUpdate();
 
 })();
+
+// ----------------------------------------------------------------------------
 
 // Get a Date object from a seconds-based timestamp (the kind of timestamp we receive in our JSON calls)
 function getTime(timestamp)
@@ -152,7 +113,7 @@ function handleDataSince(data)
   if (data.length > 0)
   {
     // Grab the timestamp for the last update that was sent to us.
-    lastUpdateTime = data.last["time"];
+    lastUpdateTime = data[data.length - 1]["time"];
   }
 
   // var items = [];
@@ -217,7 +178,6 @@ function handleStats(data)
   var uptimeC = $("#uptime-col");
 
   // Potentially change alert status
-  console.log(alert_time + " " + time + " -> " + (time - alert_time));
   setAlertStatus(alert == "Alert", two, alert_time, time);
   // Keep an active alert current
   if (alertStatus.inAlert())

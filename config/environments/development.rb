@@ -27,9 +27,4 @@ LoadMonitor::Application.configure do
   # number of complex assets.
   config.assets.debug = true
 
-  config.logger = Logger.new(STDOUT)
-  config.logger.level = Logger.const_get(
-    ENV['LOG_LEVEL'] ? ENV['LOG_LEVEL'].upcase : 'DEBUG'
-  )
-  
 end
