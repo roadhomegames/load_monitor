@@ -21,11 +21,13 @@ Alerts are generated when 2-minute average load crosses the load=1 threhsold and
 back below. You can verify this behavior by clicking the 2-minute average button in the test deployment and
 verifying that when the plot crosses the alert threshold, an alert is generated (I know, there should be some
 automated tests too, but I ran out of time and had to get this in to you so you could see it and make a decision).
-Alerts are retained for as long as you remain on the page, and are dismissed when you leave.
+Alerts are retained for as long as you remain on the page, and are dismissed if you refresh or leave and come back.
 
 I had ideas for a bunch more interactivity and animations, but unfortunately the vast majority of my time was spent on
 learning rails, ruby, css, jQuery, heroku, web app development etc. (this is my first ever web app!) and 
 I just ended up running out of time.
+
+Please let me know if you have any questions or problems.
 
 KNOWN BUGS:
 * If an alert is ongoing when you visit the page, the red-circle on the graph that corresponds to the alert is 
@@ -53,19 +55,19 @@ the server. If the server successfully launches, you can visit localhost:3000/mo
 to test your local version.
 
 JSON API:
-"app_params" PARAMETERS [<test: boolean>]
-RETURNS 
+"app_params" [<test: boolean>]
+ RETURNS 
   update_interval: int (time in seconds to wait between updates)
   updates_to_retain: int (number of updates to display in the graph)
 
-"data_since" PARAMETERS [time: <Unix timestamp>], [<test: boolean>]
-RETURNS an array of load samples that were gathered >= input timestamp.
+"data_since" [time: <Unix timestamp>], [<test: boolean>]
+ RETURNS an array of load samples that were gathered >= input timestamp.
   one: the 1-min load average for the sample
   two: the 2-min load average for the sample
   time: a UNIX timestamp indicating when the sample was gathered
 
 "stats" [<test: boolean>]
-RETURNS
+ RETURNS
   uptime: string indicating duration of machine uptime
   users: integer number of users logged in
   one: 1 min load average
@@ -95,6 +97,3 @@ Load monitoring web application
 * Make sure all messages showing when alerting thresholds are crossed remain visible on the page for historical reasons.
 
 * Write a test for the alerting logic
-
-Please feel free to use a different markup language if you do not plan to run
-<tt>rake doc:app</tt>.
